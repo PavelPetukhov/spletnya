@@ -3,6 +3,6 @@ connection:
     connected_nodes: [4002, 4003]
 
 logger:
-    path: log_spletnya.log
+    path: log_spletnya_4001.log
     level: INFO
 

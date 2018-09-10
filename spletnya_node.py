@@ -1,6 +1,6 @@
 
 
-class Spletnya_Node():
+class SpletnyaNode():
     def __init__(self, cfg):
         self.cfg = cfg
 
