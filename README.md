@@ -1,0 +1,2 @@
+# spletnya
+Gossip protocol
