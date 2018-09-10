@@ -6,6 +6,7 @@ import argparse
 from munch import DefaultMunch
 
 from spletnya.spletnya_node import SpletnyaNode
+from spletnya.config_verificator import ConfigVerificator
 from spletnya.exceptions import Misconfiguration
 
 import logging
@@ -37,6 +38,13 @@ def start_node():
         cfg = get_config()
     except Misconfiguration as err:
         print("Program will be stopped. Reason: {}".format(err))
+        exit(0)
+
+    cfg_check = ConfigVerificator(cfg)
+    try:
+        cfg_check.config_is_valid()
+    except Misconfiguration as err:
+        print("Program will be stopped because of misconfiguration. Reason: {}".format(err))
         exit(0)
 
     logger_level = {
