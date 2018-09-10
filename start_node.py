@@ -5,14 +5,14 @@ import yaml
 import argparse
 from munch import DefaultMunch
 
-from spletnya.node import Node
+from spletnya.spletnya_node import Spletnya_Node
 from spletnya.exceptions import Misconfiguration
 
 import logging
 logger = logging.getLogger(__name__)
 
 def run(cfg):
-    engine = Node(cfg)
+    engine = Spletnya_Node(cfg)
     engine.run()
 
 def get_config():
