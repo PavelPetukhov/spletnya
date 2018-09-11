@@ -1,6 +1,7 @@
 connection:
     port: 4001
     connected_nodes: [4002]
+    num_of_nodes_to_notify: 1000
 
 logger:
     path: log_spletnya_4001.log
