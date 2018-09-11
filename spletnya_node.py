@@ -3,6 +3,7 @@ import socket
 import json
 import pickle
 import uuid
+import random
 
 from threading import Thread
 
@@ -30,6 +31,8 @@ class SpletnyaNode():
         self._port = self._cfg.connection.port
         self._node_id = generate_id()
 
+        self._num_of_nodes_to_notify = self._cfg.connection.num_of_nodes_to_notify
+
         self._node.bind((self._hostname, self._port))
 
         self._timestamp = generate_timestamp()
@@ -47,6 +50,17 @@ class SpletnyaNode():
     def notify_all(self, msg):
         for node_port in self._node_ids_to_ports:
             self.send_msg(msg, self._node_ids_to_ports[node_port])
+
+    def select_nodes_and_notify(self, msg):
+        nodes_num = self._num_of_nodes_to_notify
+        if nodes_num > len(self._node_ids_to_ports.values()):
+            nodes_num = len(self._node_ids_to_ports.values())
+
+        ports_as_is = [self._node_ids_to_ports[k] for k in self._node_ids_to_ports]
+        random.shuffle(ports_as_is)
+        ports = ports_as_is[:nodes_num]
+        for port in ports:
+            self.send_msg(msg, port)
 
     def send_state(self):
         while True:
@@ -68,7 +82,8 @@ class SpletnyaNode():
                 msg.timestamp = self._timestamp
                 msg.new_state = self._state
                 msg = pickle.dumps(msg)
-                self.notify_all(msg)
+
+                self.select_nodes_and_notify(msg)
 
     def log_states(self):
         all_states = {**self._node_ids_to_states, **{self._node_id : (self._timestamp, self._state)}}
@@ -85,12 +100,12 @@ class SpletnyaNode():
             msg = pickle.loads(raw_msg)
 
             if isinstance(msg, messages.StateUpdate):
-                state = self._node_ids_to_states[msg.node_id]
-                if state:
-                    if msg.timestamp > state[0]:
-                        self._node_ids_to_states[msg.node_id] = (msg.timestamp, msg.new_state)
-                else:
+                state = self._node_ids_to_states.get(msg.node_id)
+                if state is None or msg.timestamp > state[0]:
                     self._node_ids_to_states[msg.node_id] = (msg.timestamp, msg.new_state)
+                    if self._info_received is True:
+                        msg = pickle.dumps(msg)
+                        self.select_nodes_and_notify(msg)
             elif isinstance(msg, messages.NodesRequest):
                 info = messages.NodesInfo()
                 info.node_ids_to_ports = {**self._node_ids_to_ports, **{self._node_id : self._port}}
