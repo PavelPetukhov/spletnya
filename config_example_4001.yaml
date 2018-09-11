@@ -1,6 +1,6 @@
 connection:
     port: 4001
-    connected_nodes: [4002, 4003]
+    connected_nodes: [4002]
 
 logger:
     path: log_spletnya_4001.log
