@@ -1,0 +1,8 @@
+connection:
+    port: 4003
+    connected_nodes: [4004]
+
+logger:
+    path: log_spletnya_4003.log
+    level: INFO
+
