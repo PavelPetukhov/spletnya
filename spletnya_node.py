@@ -10,7 +10,9 @@ from threading import Thread
 from spletnya.books import Books
 
 from spletnya.molva import messages
-from spletnya.authentication import Authentication
+from spletnya.authentication import Authentication, verify_signature
+
+from spletnya.exceptions import InvalidSignature
 
 import logging
 logger = logging.getLogger(__name__)
@@ -25,7 +27,7 @@ class SpletnyaNode():
     def __init__(self, cfg):
         self._cfg = cfg
 
-        self_auth = Authentication(self._cfg)
+        self._auth = Authentication(self._cfg)
 
         self._books = Books()
 
@@ -46,12 +48,24 @@ class SpletnyaNode():
         self._info_requested = False
         self._info_received = False
 
-    def send_msg(self, msg, port):
-        logger.info("Msg= {} sent to port={}".format(msg, port))
+    def send_msg(self, message, port):
+        msg = messages.Message()
+        msg.public_key = self._auth.public_key 
+        msg.message = message
+        msg.signature = self._auth.sign_msg(msg.message)
+
+        msg = pickle.dumps(msg)
+        logger.info("Sent msg to port={}".format(port))
         self._node.sendto(msg, (self._hostname, port))
 
     def receive_msg(self):
-        return self._node.recvfrom(1024)
+        raw_msg, address = self._node.recvfrom(4096)
+        msg = pickle.loads(raw_msg)
+        if verify_signature(msg.public_key, msg.signature, msg.message) is False:
+             raise InvalidSignature("Invalid signature")
+
+        msg = pickle.loads(msg.message)
+        return (msg, address)
 
     def notify_all(self, msg):
         for node_port in self._node_ids_to_ports:
@@ -99,11 +113,10 @@ class SpletnyaNode():
         while True:
             time.sleep(0.1)
 
-            raw_msg, address = self.receive_msg()
-            logger.info("Msg= {} received from={}".format(raw_msg, address))
+            msg, address = self.receive_msg()
+            logger.info("Received msg from={}".format(address))
 
             port = address[1]
-            msg = pickle.loads(raw_msg)
 
             if isinstance(msg, messages.StateUpdate):
                 state = self._node_ids_to_states.get(msg.node_id)
