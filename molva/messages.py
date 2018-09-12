@@ -1,3 +1,9 @@
+class Message():
+    def __init__(self):
+        self.public_key = ""
+        self.message = ""
+        self.signature = ""
+
 class NodesRequest():
     def __init__(self):
         self.node_id = ""
