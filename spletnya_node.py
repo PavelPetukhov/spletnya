@@ -10,6 +10,7 @@ from threading import Thread
 from spletnya.books import Books
 
 from spletnya.molva import messages
+from spletnya.authentication import Authentication
 
 import logging
 logger = logging.getLogger(__name__)
@@ -23,6 +24,8 @@ def generate_timestamp():
 class SpletnyaNode():
     def __init__(self, cfg):
         self._cfg = cfg
+
+        self_auth = Authentication(self._cfg)
 
         self._books = Books()
 
@@ -46,6 +49,9 @@ class SpletnyaNode():
     def send_msg(self, msg, port):
         logger.info("Msg= {} sent to port={}".format(msg, port))
         self._node.sendto(msg, (self._hostname, port))
+
+    def receive_msg(self):
+        return self._node.recvfrom(1024)
 
     def notify_all(self, msg):
         for node_port in self._node_ids_to_ports:
@@ -93,7 +99,7 @@ class SpletnyaNode():
         while True:
             time.sleep(0.1)
 
-            raw_msg, address = self._node.recvfrom(1024)
+            raw_msg, address = self.receive_msg()
             logger.info("Msg= {} received from={}".format(raw_msg, address))
 
             port = address[1]
